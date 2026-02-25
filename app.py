@@ -136,13 +136,30 @@ colA, colB = st.columns([1, 1])
 
 with colA:
     st.subheader("📄 Genera Rapporto di Taratura")
-    if not df_registro.empty:
-        lista_strumenti = df_registro['Strumento'] + " (Matr: " + df_registro['Matricola'] + ")"
+    
+    # Rimuoviamo eventuali righe vuote lette da Airtable per sicurezza
+    df_valido = df_registro[df_registro['Matricola'] != ""].copy()
+    
+    if not df_valido.empty:
+        lista_strumenti = df_valido['Strumento'].fillna("Sconosciuto") + " (Matr: " + df_valido['Matricola'] + ")"
         scelta = st.selectbox("Seleziona lo strumento:", lista_strumenti)
         
+        # Estrae i dati dello strumento selezionato
         matr_selezionata = scelta.split("(Matr: ")[1].replace(")", "")
-        dati_strumento = df_registro[df_registro['Matricola'] == matr_selezionata].iloc[0]
-        stato = "SCADUTO" if dati_strumento['Data Scadenza'] < oggi else "IN CORSO DI VALIDITÀ"
+        dati_strumento = df_valido[df_valido['Matricola'] == matr_selezionata].iloc[0]
+        
+        # Controllo stato (con sicurezza nel caso la data sia vuota)
+        if pd.notna(dati_strumento['Data Scadenza']) and dati_strumento['Data Scadenza'] < oggi:
+            stato = "SCADUTO"
+        else:
+            stato = "IN CORSO DI VALIDITÀ"
+        
+        # --- QUI DEFINIAMO LE VARIABILI MANCANTI ---
+        # Formattazione sicura delle date per il file di testo
+        dt_tar = dati_strumento['Data Taratura']
+        dt_scad = dati_strumento['Data Scadenza']
+        str_tar = dt_tar.strftime('%d/%m/%Y') if pd.notna(dt_tar) else "N/D"
+        str_scad = dt_scad.strftime('%d/%m/%Y') if pd.notna(dt_scad) else "N/D"
         
         testo_rapporto = f"""========================================
 CERTIFICATO INTERNO DI TARATURA E CONTROLLO
@@ -171,13 +188,14 @@ Firma del Responsabile: _______________________
             mime="text/plain"
         )
     else:
-        st.write("Nessuno strumento disponibile.")
+        st.write("Nessuno strumento valido disponibile.")
 
 with colB:
     st.subheader("📜 Storico Interventi di Taratura")
     df_storico = carica_storico()
     if not df_storico.empty:
+        # Mostra le righe invertite (le più recenti in alto)
         st.dataframe(df_storico.iloc[::-1], use_container_width=True, hide_index=True)
     else:
-
         st.write("Nessuna taratura registrata finora nello storico.")
+
