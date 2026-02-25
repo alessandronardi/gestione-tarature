@@ -30,8 +30,9 @@ def carica_registro():
                 df[col] = ""
                 
         df['Matricola'] = df['Matricola'].astype(str)
-        df['Data Taratura'] = pd.to_datetime(df['Data Taratura']).dt.date
-        df['Data Scadenza'] = pd.to_datetime(df['Data Scadenza']).dt.date
+# errors='coerce' trasforma automaticamente gli errori o le celle vuote in 'NaT' in modo sicuro
+        df['Data Taratura'] = pd.to_datetime(df['Data Taratura'], errors='coerce')
+        df['Data Scadenza'] = pd.to_datetime(df['Data Scadenza'], errors='coerce')
     return df
 
 def carica_storico():
@@ -43,8 +44,8 @@ def carica_storico():
 st.title("📏 Gestione Strumenti e Tarature")
 
 df_registro = carica_registro()
-oggi = datetime.now().date()
-soglia_avviso = oggi + timedelta(days=30)
+oggi = pd.Timestamp("today").normalize()
+soglia_avviso = oggi + pd.Timedelta(days=30)
 
 # 1. SEZIONE AVVISI
 if not df_registro.empty:
@@ -154,8 +155,8 @@ INFORMAZIONI STRUMENTO:
 - Numero di Matricola Interna: {dati_strumento['Matricola']}
 
 DETTAGLI TARATURA:
-- Data di esecuzione taratura: {dati_strumento['Data Taratura']}
-- Data di prossima scadenza: {dati_strumento['Data Scadenza']}
+- Data di esecuzione taratura: {str_tar}
+- Data di prossima scadenza: {str_scad}
 - Stato attuale dello strumento: {stato}
 
 Il presente documento attesta che lo strumento è inserito a registro.
@@ -178,4 +179,5 @@ with colB:
     if not df_storico.empty:
         st.dataframe(df_storico.iloc[::-1], use_container_width=True, hide_index=True)
     else:
+
         st.write("Nessuna taratura registrata finora nello storico.")
