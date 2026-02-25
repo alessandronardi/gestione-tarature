@@ -97,7 +97,7 @@ with st.form("form_inserimento", clear_on_submit=True):
             
         # Storico
         tabella_storico.create({
-            "Data Registrazione": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "Data Registrazione": datetime.now().strftime("%Y-%m-%d"),
             "Matricola": str(matricola).strip(),
             "Strumento": nome,
             "Data Taratura": data_tar.strftime("%Y-%m-%d"),
@@ -210,3 +210,4 @@ with colB:
         )
     else:
         st.write("Nessuna taratura registrata finora nello storico.")
+
